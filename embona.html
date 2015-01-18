@@ -1,0 +1,135 @@
+<!-- このファイルはUTF-8 -->
+<!doctype html>
+<html><head><title>embona</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<script src="viewer.js"></script>
+<script src="bona_parser.js"></script>
+<script>
+var Error = function(msg) { console.log("Error:" + msg); debugger; };
+onload = function() {
+	var worker = new Worker("bonanza.js");
+	var stdout = document.getElementById("stdout");
+	var history = "";
+	var lastMoveCount = 0;
+	var moveCandidate;
+	var currentStyle = "cpu";
+	var nextStyle = "";
+	document.getElementById("new").onclick = function() {
+		if(!nextStyle) {
+			var time = 1;
+			document.getElementById("sec10").checked && (time = 10);
+			document.getElementById("sec30").checked && (time = 30);
+			var style = "black";
+			document.getElementById("white").checked && (style = "white");
+			document.getElementById("cpu").checked && (style = "cpu");
+			nextStyle = style;
+			worker.postMessage("new:"+ style + ":" + time);
+		}
+	};
+	viewer.onmoveenter = function(from, to, type) {
+		moveCandidate = (lastMoveCount + 1) + " " + from + " " + to + " " + type + " 0";
+		worker.postMessage("move:" + from + to + type);
+	};
+	worker.addEventListener("message", function(e) {
+		var str = e.data;
+		if(str.indexOf("message:") == 0) {
+			stdout.innerHTML = str.substr(8);
+		} else if(str.indexOf("embona:") == 0) {
+			var command = str.substr(7);
+			switch(command) {
+			case "new":
+				if(nextStyle) {
+					currentStyle = nextStyle;
+					nextStyle = "";
+
+					lastMoveCount = 0;
+					history = "";
+
+					viewer.isDraggable = false;
+					if(currentStyle == "black") {
+						viewer.isSente = true;
+						viewer.isDraggable = true;
+					} else {
+						viewer.isSente = false;
+						viewer.isDraggable = false;
+					}
+					if(currentStyle == "white") {
+						viewer.setFlip(true);
+					} else {
+						viewer.setFlip(false);
+					}
+					parser.parse(history);
+				}
+				break;
+			/*
+			case "accept":
+				history += moveCandidate + "\n";
+				moveCandidate = "";
+				parser.parse(history);
+				break;
+				*/
+			case "illegal":
+				moveCandidate = "";
+				parser.parse(history);
+				viewer.isDraggable = true;
+				break;
+			}
+		} else {
+			stdout.innerHTML = "";
+			document.getElementById("new_container").style.display = "block";
+			var data = "";
+			if(/(White|Black) ([0-9]+)> ([0-9][0-9])([0-9][0-9])([A-Z]+) '\((-?[0-9]+)/.test(str)) {
+				data = RegExp.$2 + " " + RegExp.$3 + " " + RegExp.$4 + " " + RegExp.$5 + " " + RegExp.$6;
+				lastMoveCount = +RegExp.$2;
+				if(currentStyle != "cpu") {
+					viewer.isDraggable = true;
+				} else {
+					if(!nextStyle) {
+						worker.postMessage("move");
+					}
+				}
+				//stdout.innerHTML += data + "<BR>";
+			} else if(/(White|Black) ([0-9]+)> (resign) '\((-?[0-9]+)/.test(str)) {
+				data = RegExp.$2 + " " + RegExp.$3 + " " + RegExp.$4;
+				lastMoveCount = +RegExp.$2;
+				//stdout.innerHTML += data + "<BR>";
+			} else if(moveCandidate && /- time ctrl/.test(str)) {
+				data = moveCandidate;
+				lastMoveCount++;
+				moveCandidate = "";
+			}
+			if(data) {
+				history += data + "\n";
+				//stdout.innerHTML = history;
+				parser.parse(history);
+			}
+			//stdout.innerHTML += str + "<BR>";
+		}
+	}, false);
+	parser.parse();
+	viewer.isSente = true;
+	viewer.isDraggable = false;
+};
+</script>
+<script>
+</script>
+<body style="position:relative">
+<div id="gote_mochigoma" style="position:relative;background-color:#ff8;left:0;top:0;overflow:hidden"></div>
+<div id="board" style="position:relative;left:0;top:0;background-color:#000;display:block"></div>
+<div id="sente_mochigoma" style="position:relative;background-color:#ff8;left:0;top:0;overflow:hidden"></div>
+<textarea id="comment" cols="75" rows="10" readonly></textarea>
+<select id="kifu" size="20" style="position:absolute;top:0;left:400px;height:500px">
+</select>
+<div id="new_container" style="position:absolute;top:510px;left:400px;font-size:small;display:none">
+	<input type="button" id="new" value="新規対局"><br>
+	対局スタイル<br>
+	<input type="radio" name="turn" id="cpu" checked>CPU vs CPU<br>
+	<input type="radio" name="turn" id="black"> 先手<br>
+	<input type="radio" name="turn" id="white"> 後手<br>
+	CPUの思考時間<br>
+	<input type="radio" name="time" id="sec1" checked> 1秒<br>
+	<input type="radio" name="time" id="sec10"> 10秒<br>
+	<input type="radio" name="time" id="sec30"> 30秒<br>
+</div>
+<div style="position:absolute;top:0;left:0"><pre id="stdout" style="font-family: monospace;color:#000">Initializing</pre></div>
+</body></html>
