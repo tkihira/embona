@@ -114,7 +114,7 @@ window.viewer = {};
 					toX = 10 - toX;
 					toY = 10 - toY;
 				}
-				if(toX < 1 || toX > 9 || toY < 1 || toY > 9 || (fromX == toX && fromY == toY)) {
+				if(toX < 1 || toX > 9 || toY < 1 || toY > 9 || (targetPiece.onBoard && fromX == toX && fromY == toY)) {
 					showBoard();
 					return;
 				}
