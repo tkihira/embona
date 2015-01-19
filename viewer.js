@@ -127,13 +127,17 @@ window.viewer = {};
 					fromX = 0;
 					fromY = 0;
 				}
-				if(type == 1 || type == 3 || type == 5 || type == 7 || type == 10 || type == 12) {
-					//console.log(fromY, toY, targetPiece.sente, targetPiece, fromX);
-					if(fromX != 0 && ((fromY >=7 || toY >= 7) && !targetPiece.sente || (fromY <= 3 || toY <= 3) && targetPiece.sente)) {
-						if(confirm("成りますか？")) {
-							type++;
+				if(targetPiece.type == targetPiece.screen) {
+					if(type == 1 || type == 3 || type == 5 || type == 7 || type == 10 || type == 12) {
+						//console.log(fromY, toY, targetPiece.sente, targetPiece, fromX);
+						if(fromX != 0 && ((fromY >=7 || toY >= 7) && !targetPiece.sente || (fromY <= 3 || toY <= 3) && targetPiece.sente)) {
+							if(confirm("成りますか？")) {
+								type++;
+							}
 						}
 					}
+				} else {
+					type = targetPiece.screen;
 				}
 				if(viewer.onmoveenter) {
 					viewer.onmoveenter("" + fromX + fromY, "" + toX + toY, types[type]);
